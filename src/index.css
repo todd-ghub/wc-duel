@@ -23,21 +23,37 @@ body,
 #root {
   height: 100%;
 }
+#root {
+  /* Dynamic viewport height so the shell fills the screen under mobile browser
+     chrome and in standalone PWA mode, where 100%/100vh can leave gaps on iOS. */
+  min-height: 100dvh;
+}
 
 body {
   margin: 0;
   font-family: var(--font-sans);
   color: #e8ecff;
   background: var(--color-ink);
-  /* Aurora gradient field behind the glass UI */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+}
+
+/* Aurora gradient field as a fixed, full-screen layer behind everything. A fixed
+   pseudo-element (rather than background-attachment: fixed, which is broken in
+   iOS standalone PWAs) guarantees the background always covers the whole screen
+   regardless of content length or scroll position. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--color-ink);
   background-image:
     radial-gradient(60% 50% at 15% 0%, rgba(56, 189, 248, 0.16), transparent 70%),
     radial-gradient(55% 45% at 90% 8%, rgba(232, 121, 249, 0.16), transparent 70%),
     radial-gradient(70% 60% at 50% 110%, rgba(99, 102, 241, 0.12), transparent 70%);
-  background-attachment: fixed;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  overscroll-behavior-y: none;
 }
 
 /* Native-app feel: kill tap highlight & text selection on chrome */
