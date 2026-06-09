@@ -1,0 +1,31 @@
+{
+  "name": "wc2026-watch-game",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "WC Duel 2026 — a two-player World Cup 2026 watch game PWA",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "fetch": "node --env-file=.env scripts/fetch-data.mjs",
+    "fetch:ci": "node scripts/fetch-data.mjs"
+  },
+  "dependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "@types/node": "^25.9.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "motion": "^12.40.0",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16",
+    "vite-plugin-pwa": "^1.3.0"
+  }
+}

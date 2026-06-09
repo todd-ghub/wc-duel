@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  World Cup 2026 live-data updater. An EventBridge schedule invokes a Lambda
+  every 3 minutes; the Lambda fetches the WC fixtures from football-data.org and
+  writes a public, CORS-enabled matches.json to S3 that the PWA reads directly.
+  The API key stays in the Lambda's environment — never in the browser.
+
+Parameters:
+  FootballDataApiKey:
+    Type: String
+    NoEcho: true
+    Description: Your football-data.org API key.
+  DataObjectKey:
+    Type: String
+    Default: matches.json
+    Description: S3 object key the app fetches.
+  ScheduleEnabled:
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+    Description: Set to "false" to pause the every-3-minutes updater (e.g. between match days).
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 25
+    MemorySize: 128
+
+Resources:
+  DataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # ACLs disabled; public access is granted by the bucket policy below.
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods: [GET, HEAD]
+            AllowedOrigins: ["*"] # data is public; "*" keeps it simple
+            AllowedHeaders: ["*"]
+            MaxAge: 300
+
+  DataBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DataBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadMatchData
+            Effect: Allow
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: !Sub "${DataBucket.Arn}/*"
+
+  UpdaterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      CodeUri: lambda/
+      Description: Fetches WC matches and writes matches.json to S3 (only when scores change).
+      Environment:
+        Variables:
+          FOOTBALL_DATA_AK: !Ref FootballDataApiKey
+          BUCKET: !Ref DataBucket
+          OBJECT_KEY: !Ref DataObjectKey
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: ["s3:PutObject", "s3:GetObject"]
+              Resource: !Sub "${DataBucket.Arn}/*"
+      Events:
+        EveryMinute:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: rate(3 minutes)
+            State: !If [SchedulerOn, ENABLED, DISABLED]
+
+Conditions:
+  SchedulerOn: !Equals [!Ref ScheduleEnabled, "true"]
+
+Outputs:
+  DataUrl:
+    Description: >
+      Set this as VITE_DATA_URL when building the app (and as the GitHub repo
+      variable DATA_URL) so the PWA reads live data from here.
+    Value: !Sub "https://${DataBucket}.s3.${AWS::Region}.amazonaws.com/${DataObjectKey}"
+  BucketName:
+    Value: !Ref DataBucket
+  FunctionName:
+    Value: !Ref UpdaterFunction

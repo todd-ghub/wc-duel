@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0b1020;
+  --color-ink-2: #0f1530;
+  --color-card: #161d3d;
+
+  /* Owner identity colors now live in src/config.ts (per-owner `color`). */
+
+  /* Live accent kept amber so it never reads as an owner's green. */
+  --color-live: #fbbf24;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+    system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: #e8ecff;
+  background: var(--color-ink);
+  /* Aurora gradient field behind the glass UI */
+  background-image:
+    radial-gradient(60% 50% at 15% 0%, rgba(56, 189, 248, 0.16), transparent 70%),
+    radial-gradient(55% 45% at 90% 8%, rgba(232, 121, 249, 0.16), transparent 70%),
+    radial-gradient(70% 60% at 50% 110%, rgba(99, 102, 241, 0.12), transparent 70%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+}
+
+/* Native-app feel: kill tap highlight & text selection on chrome */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Hide scrollbars but keep scrolling (horizontal chip rows etc.) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* Top bar that blends into the page background instead of reading as a separate
+   block: no solid fill — a blur layer (on ::before, behind the title) frosts
+   whatever scrolls beneath and fades out at the bottom edge, so at rest the
+   header looks like the same aurora background. */
+/* Note: positioning comes from the Tailwind `sticky` class on the element — don't
+   set `position` here or it overrides sticky and the header scrolls away. */
+.app-header > * {
+  position: relative;
+  z-index: 1;
+}
+.app-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(11, 16, 32, 0.2), rgba(11, 16, 32, 0));
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+}
+
+@utility glass {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.07),
+    rgba(255, 255, 255, 0.03)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.82); }
+}
+.live-dot {
+  animation: pulse-live 1.4s ease-in-out infinite;
+}

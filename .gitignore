@@ -1,0 +1,25 @@
+node_modules
+dist
+dist-ssr
+*.local
+
+# Secrets — the API key lives here locally and as a GitHub Actions secret in CI.
+# Never commit it (the repo is public so Pages + Actions are free).
+.env
+.env.*
+!.env.example
+
+# AWS SAM build artifacts + deploy config (samconfig can hold the API key param)
+.aws-sam
+infra/samconfig.toml
+
+# Editor / OS
+.DS_Store
+.idea
+*.log
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Claude Code local tooling/settings (not needed in the repo)
+.claude/

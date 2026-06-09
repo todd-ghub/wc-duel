@@ -1,0 +1,82 @@
+name: Build & Deploy
+
+on:
+  # Redeploy on every push to main.
+  push:
+    branches: [main]
+  # Refresh scores automatically. GitHub's minimum is 5 min; ~every 10 keeps the
+  # board near-live during matches without burning through anything (free on
+  # public repos). Cron is UTC.
+  schedule:
+    - cron: "*/10 * * * *"
+  # Manual "Run workflow" button.
+  workflow_dispatch:
+
+# Allow the workflow to publish to GitHub Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never run two deploys at once; let an in-progress one finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Pull fresh match data. If the API hiccups (rate limit etc.) we keep the
+      # last committed data and still deploy.
+      - name: Fetch latest scores
+        continue-on-error: true
+        env:
+          FOOTBALL_DATA_AK: ${{ secrets.FOOTBALL_DATA_AK }}
+        run: npm run fetch:ci
+
+      # On project pages the site lives at /<repo>/; on a user/org page (<name>.github.io) at /.
+      - name: Compute base path
+        id: base
+        run: |
+          repo="${{ github.event.repository.name }}"
+          if [[ "$repo" == *.github.io ]]; then
+            echo "value=/" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=/$repo/" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build
+        env:
+          VITE_BASE: ${{ steps.base.outputs.value }}
+          # Optional: set repo variable VITE_DATA_URL to the S3 URL from the SAM
+          # stack output to read live (1-min) data. If unset, the app uses the
+          # bundled JSON fetched above.
+          VITE_DATA_URL: ${{ vars.VITE_DATA_URL }}
+          # Optional: player display names, so real names stay out of the repo.
+          VITE_PLAYER1_NAME: ${{ vars.VITE_PLAYER1_NAME }}
+          VITE_PLAYER2_NAME: ${{ vars.VITE_PLAYER2_NAME }}
+        run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
