@@ -13,6 +13,8 @@ rules live in [RULES.md](RULES.md).
 Built as an installable PWA (Add to Home Screen on iPhone/Android), works offline
 once opened, and runs entirely on free hosting — no server to maintain.
 
+___
+Custom
 ---
 
 ## Quick start
