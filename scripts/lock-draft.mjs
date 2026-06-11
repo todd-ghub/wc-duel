@@ -27,6 +27,18 @@ if (await exists(LOCK)) {
   process.exit(0);
 }
 
+// Strict mode: in CI (and any other place where regenerating mid-tournament
+// would corrupt the live draft), set WC_REQUIRE_LOCK=1 so this script aborts
+// instead of silently rolling a new random draft.
+if (process.env.WC_REQUIRE_LOCK) {
+  console.error(
+    "ERROR: draft.lock.json is missing and WC_REQUIRE_LOCK is set.\n" +
+      "Refusing to re-draft — the lock file must be committed to the repo.\n" +
+      "If you really mean to re-roll, unset WC_REQUIRE_LOCK and run again.",
+  );
+  process.exit(1);
+}
+
 const config = await readFile(CONFIG, "utf8");
 
 // Parse `export const NAME ... = [ "ABC", "DEF", ... ]` from config.ts. We
