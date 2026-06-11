@@ -12,9 +12,10 @@ on:
   # Manual "Run workflow" button.
   workflow_dispatch:
 
-# Allow the workflow to publish to GitHub Pages.
+# Allow the workflow to publish to GitHub Pages, and to commit draft.lock.json
+# back to main on the very first build (see "Lock draft" step below).
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -35,6 +36,24 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      # Lock the draft. On the first build draft.lock.json doesn't exist yet —
+      # the script picks a random starter, runs the snake draft, and writes
+      # the file. We commit it back to main so every later build reads the
+      # same locked result. The follow-up push uses "[skip ci]" to avoid an
+      # extra workflow run.
+      - name: Lock draft
+        run: npm run lock-draft
+
+      - name: Commit draft.lock.json if generated
+        run: |
+          if [ -n "$(git status --porcelain draft.lock.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add draft.lock.json
+            git commit -m "Lock draft snake order [skip ci]"
+            git push
+          fi
 
       # Pull fresh match data. If the API hiccups (rate limit etc.) we keep the
       # last committed data and still deploy.

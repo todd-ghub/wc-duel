@@ -38,9 +38,7 @@ function OwnerColumn({ owner, total, teams }: { owner: Owner; total: number; tea
   const theme = OWNER_THEME[owner];
   return (
     <section>
-      <SectionTitle
-        right={<span className="font-bold text-white/70 tabular-nums">{fmtPts(total)} pts</span>}
-      >
+      <SectionTitle>
         <span
           style={{
             background: theme.gradient,
@@ -50,6 +48,9 @@ function OwnerColumn({ owner, total, teams }: { owner: Owner; total: number; tea
           }}
         >
           {OWNERS[owner].label}
+        </span>
+        <span className="ml-1.5 font-bold text-white/70 tabular-nums">
+          ({fmtPts(total)})
         </span>
       </SectionTitle>
       <div className="space-y-2">

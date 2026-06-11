@@ -5,6 +5,8 @@
 import {
   OWNERS as OWNER_LIST,
   DRAFT as DRAFT_BY_OWNER,
+  PLAYER1_RANKS,
+  PLAYER2_RANKS,
   type Owner,
   type OwnerConfig,
 } from "../config";
@@ -49,15 +51,24 @@ export const DRAFT_BY_TLA: Record<string, DraftTeam> = Object.fromEntries(
   DRAFT.map((t) => [t.tla, t]),
 );
 
-// Dev-only sanity check: every field team assigned exactly once, no stray codes.
+// Dev-only sanity check: each rank list is a permutation of the 48-team field,
+// and the resulting DRAFT assigns every team to exactly one owner.
 if (import.meta.env?.DEV) {
-  const seen = new Map<string, number>();
-  for (const id of OWNER_IDS) {
-    for (const tla of DRAFT_BY_OWNER[id]) {
+  const checkRanks = (label: string, ranks: readonly string[]) => {
+    if (ranks.length === 0) return; // empty = fall back to FIFA order in scripts/lock-draft.mjs
+    const seen = new Map<string, number>();
+    for (const tla of ranks) {
       seen.set(tla, (seen.get(tla) ?? 0) + 1);
-      if (!FIELD_BY_TLA[tla]) console.error(`[config] DRAFT has unknown TLA "${tla}" (not in field.ts)`);
+      if (!FIELD_BY_TLA[tla]) console.error(`[config] ${label} has unknown TLA "${tla}" (not in field.ts)`);
     }
-  }
-  for (const [tla, n] of seen) if (n > 1) console.error(`[config] DRAFT assigns "${tla}" to ${n} owners — pick one`);
-  for (const t of FIELD) if (!seen.has(t.tla)) console.error(`[config] DRAFT is missing ${t.tla} (${t.name}) — assign it to an owner`);
+    for (const [tla, n] of seen) if (n > 1) console.error(`[config] ${label} lists "${tla}" ${n} times — each team must appear once`);
+    for (const t of FIELD) if (!seen.has(t.tla)) console.error(`[config] ${label} is missing ${t.tla} (${t.name}) — every team must be ranked`);
+  };
+  checkRanks("PLAYER1_RANKS", PLAYER1_RANKS);
+  checkRanks("PLAYER2_RANKS", PLAYER2_RANKS);
+
+  const seen = new Map<string, number>();
+  for (const id of OWNER_IDS) for (const tla of DRAFT_BY_OWNER[id]) seen.set(tla, (seen.get(tla) ?? 0) + 1);
+  for (const [tla, n] of seen) if (n > 1) console.error(`[config] DRAFT assigns "${tla}" to ${n} owners`);
+  for (const t of FIELD) if (!seen.has(t.tla)) console.error(`[config] DRAFT is missing ${t.tla} (${t.name})`);
 }
