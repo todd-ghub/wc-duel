@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import type { DataFile } from "../lib/types";
 import { OWNERS, OWNER_IDS, type Owner } from "../data/teams";
-import { computeStandings } from "../lib/scoring";
+import { computeStandings, computeLiveOwnerPoints } from "../lib/scoring";
 import { fmtPts, isFinished, isLive, isUpcoming } from "../lib/format";
 import { OWNER_THEME } from "../components/owner";
 import { MatchCard } from "../components/MatchCard";
@@ -23,13 +23,16 @@ function AnimatedNumber({ value, className }: { value: number; className?: strin
 
 export function Dashboard({ data }: { data: DataFile }) {
   const { owners } = computeStandings(data.matches);
+  const liveOwnerPts = computeLiveOwnerPoints(data.matches);
   const [idA, idB] = OWNER_IDS;
   const d = owners[idA];
   const a = owners[idB];
-  const total = d.points + a.points || 1;
-  const dShare = (d.points / total) * 100;
-  const leader = d.points === a.points ? null : d.points > a.points ? idA : idB;
-  const margin = Math.abs(d.points - a.points);
+  const dTotal = d.points + liveOwnerPts[idA];
+  const aTotal = a.points + liveOwnerPts[idB];
+  const total = dTotal + aTotal || 1;
+  const dShare = (dTotal / total) * 100;
+  const leader = dTotal === aTotal ? null : dTotal > aTotal ? idA : idB;
+  const margin = Math.abs(dTotal - aTotal);
 
   const live = data.matches.filter(isLive);
   const finishedCount = data.matches.filter(isFinished).length;
@@ -54,11 +57,11 @@ export function Dashboard({ data }: { data: DataFile }) {
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-          <OwnerSide owner={idA} pts={d.points} leading={leader === idA} align="start" />
+          <OwnerSide owner={idA} pts={dTotal} livePoints={liveOwnerPts[idA]} leading={leader === idA} align="start" />
           <div className="px-1 text-center">
             <div className="text-[11px] font-bold uppercase tracking-widest text-white/30">vs</div>
           </div>
-          <OwnerSide owner={idB} pts={a.points} leading={leader === idB} align="end" />
+          <OwnerSide owner={idB} pts={aTotal} livePoints={liveOwnerPts[idB]} leading={leader === idB} align="end" />
         </div>
 
         {/* Share bar */}
@@ -152,11 +155,13 @@ export function Dashboard({ data }: { data: DataFile }) {
 function OwnerSide({
   owner,
   pts,
+  livePoints,
   leading,
   align,
 }: {
   owner: Owner;
   pts: number;
+  livePoints: number;
   leading: boolean;
   align: "start" | "end";
 }) {
@@ -182,6 +187,11 @@ function OwnerSide({
         value={pts}
         className="mt-0.5 text-[40px] font-extrabold leading-none tabular-nums tracking-tight"
       />
+      {livePoints > 0 && (
+        <span className="text-[11px] font-semibold tabular-nums text-(--color-live)/80">
+          +{fmtPts(livePoints)} live
+        </span>
+      )}
       <span className="text-[11px] text-white/40">points</span>
     </div>
   );

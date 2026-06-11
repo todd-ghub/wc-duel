@@ -28,12 +28,14 @@ function TeamRow({
   crest,
   score,
   bold,
+  livePoints,
 }: {
   tla: string | null;
   name: string;
   crest: string | null;
   score: number | null;
   bold: boolean;
+  livePoints?: number;
 }) {
   return (
     <div className="flex items-center gap-2.5">
@@ -45,6 +47,11 @@ function TeamRow({
       {score != null && (
         <span className={`w-5 text-right text-[17px] tabular-nums ${bold ? "font-bold" : "font-semibold text-white/85"}`}>
           {score}
+        </span>
+      )}
+      {livePoints != null && (
+        <span className="min-w-[34px] text-right text-[11px] font-semibold tabular-nums text-(--color-live)/80">
+          {fmtPts(livePoints)}pts
         </span>
       )}
     </div>
@@ -98,6 +105,9 @@ export function MatchCard({ match: m }: { match: Match }) {
   const awaySc = scoreTeamInMatch(m, "away");
   const expandable = finished && (homeSc != null || awaySc != null);
 
+  const homeLiveSc = live ? scoreTeamInMatch(m, "home", { includeInPlay: true }) : null;
+  const awayLiveSc = live ? scoreTeamInMatch(m, "away", { includeInPlay: true }) : null;
+
   return (
     <motion.div layout className="glass overflow-hidden rounded-2xl">
       <button
@@ -123,8 +133,8 @@ export function MatchCard({ match: m }: { match: Match }) {
           </span>
         </div>
         <div className="space-y-1.5">
-          <TeamRow tla={m.home.tla} name={m.home.name} crest={m.home.crest} score={finished || live ? m.scoreHome : null} bold={homeWin} />
-          <TeamRow tla={m.away.tla} name={m.away.name} crest={m.away.crest} score={finished || live ? m.scoreAway : null} bold={awayWin} />
+          <TeamRow tla={m.home.tla} name={m.home.name} crest={m.home.crest} score={finished || live ? m.scoreHome : null} bold={homeWin} livePoints={homeLiveSc?.final} />
+          <TeamRow tla={m.away.tla} name={m.away.name} crest={m.away.crest} score={finished || live ? m.scoreAway : null} bold={awayWin} livePoints={awayLiveSc?.final} />
         </div>
         {expandable && (
           <div className="mt-2 text-center text-[11px] text-white/35">

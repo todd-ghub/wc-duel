@@ -57,9 +57,27 @@ export function isScorable(m: Match): boolean {
   );
 }
 
-/** Compute one team's points from one finished match. `side` is whose perspective. */
-export function scoreTeamInMatch(m: Match, side: "home" | "away"): TeamMatchScore | null {
-  if (!isScorable(m)) return null;
+function isLiveScorable(m: Match): boolean {
+  return (
+    (m.status === "IN_PLAY" || m.status === "PAUSED") &&
+    m.scoreHome != null &&
+    m.scoreAway != null &&
+    m.home.tla != null &&
+    m.away.tla != null &&
+    m.home.tla in DRAFT_BY_TLA &&
+    m.away.tla in DRAFT_BY_TLA
+  );
+}
+
+/** Compute one team's points from one finished match. `side` is whose perspective.
+ *  Pass `{ includeInPlay: true }` to also score live IN_PLAY/PAUSED matches. */
+export function scoreTeamInMatch(
+  m: Match,
+  side: "home" | "away",
+  opts?: { includeInPlay?: boolean },
+): TeamMatchScore | null {
+  const ok = opts?.includeInPlay ? (isScorable(m) || isLiveScorable(m)) : isScorable(m);
+  if (!ok) return null;
   const isHome = side === "home";
   const gf = (isHome ? m.scoreHome : m.scoreAway) as number;
   const ga = (isHome ? m.scoreAway : m.scoreHome) as number;
@@ -190,6 +208,25 @@ export function computeStandings(matches: Match[]): {
     o.teams.sort((a, b) => b.points - a.points || a.rank - b.rank);
   }
   return { owners, teams };
+}
+
+/** Points currently being earned in live (IN_PLAY/PAUSED) matches, per owner. */
+export function computeLiveOwnerPoints(matches: Match[]): Record<Owner, number> {
+  const result = Object.fromEntries(
+    OWNER_IDS.map((id): [Owner, number] => [id, 0]),
+  ) as Record<Owner, number>;
+  for (const m of matches) {
+    if (m.status !== "IN_PLAY" && m.status !== "PAUSED") continue;
+    for (const side of ["home", "away"] as const) {
+      const tla = side === "home" ? m.home.tla : m.away.tla;
+      if (!tla || !(tla in DRAFT_BY_TLA)) continue;
+      const sc = scoreTeamInMatch(m, side, { includeInPlay: true });
+      if (!sc) continue;
+      const owner = DRAFT_BY_TLA[tla].owner;
+      result[owner] += sc.final;
+    }
+  }
+  return result;
 }
 
 /** Finished matches with per-team contributions, newest first — for the History tab. */
