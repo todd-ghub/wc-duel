@@ -23,10 +23,21 @@ body,
 #root {
   height: 100%;
 }
+html,
+body {
+  /* Lock the document so iOS Safari can't rubber-band the whole page and leave
+     position:fixed elements (like the TabBar) drifting to the middle of the
+     screen. All scrolling happens inside #root instead. */
+  overflow: hidden;
+  overscroll-behavior: none;
+}
 #root {
-  /* Dynamic viewport height so the shell fills the screen under mobile browser
-     chrome and in standalone PWA mode, where 100%/100vh can leave gaps on iOS. */
-  min-height: 100dvh;
+  /* The app's single scroll container. Dynamic viewport height fills the screen
+     under mobile browser chrome and in standalone PWA mode. */
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -36,7 +47,6 @@ body {
   background: var(--color-ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overscroll-behavior-y: none;
 }
 
 /* Aurora gradient field as a fixed, full-screen layer behind everything. A fixed

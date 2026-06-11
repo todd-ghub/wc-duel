@@ -30,7 +30,7 @@ export default function App() {
   const { data, ready, error, loading, refresh } = useData();
 
   return (
-    <div className="mx-auto flex min-h-[100dvh] max-w-md flex-col">
+    <div className="mx-auto flex min-h-full max-w-md flex-col">
       {/* Header */}
       <header
         className="app-header sticky top-0 z-20 px-4 pb-3"
