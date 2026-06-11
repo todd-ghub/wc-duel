@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { Match } from "../lib/types";
 import { DRAFT_BY_TLA, OWNERS } from "../data/teams";
-import { fmtPts, fmtTime, isFinished, isLive, stageLabel } from "../lib/format";
+import { fmtPts, fmtPts2, fmtTime, isFinished, isLive, stageLabel } from "../lib/format";
 import { scoreTeamInMatch, type TeamMatchScore } from "../lib/scoring";
 import { Flag } from "./Flag";
 import { OWNER_THEME } from "./owner";
@@ -50,8 +50,8 @@ function TeamRow({
         </span>
       )}
       {livePoints != null && (
-        <span className="min-w-[34px] text-right text-[11px] font-semibold tabular-nums text-(--color-live)/80">
-          {fmtPts(livePoints)}pts
+        <span className="w-[46px] text-right text-[11px] font-semibold tabular-nums text-(--color-live)/80">
+          {fmtPts2(livePoints)}pts
         </span>
       )}
     </div>

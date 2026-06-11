@@ -6,6 +6,11 @@ export function fmtPts(n: number): string {
   return r.toFixed(2).replace(/\.?0+$/, "") || "0";
 }
 
+/** Always exactly 2 decimal places — for aligned live-score columns. */
+export function fmtPts2(n: number): string {
+  return (Math.round(n * 100) / 100).toFixed(2);
+}
+
 const STAGE_LABELS: Record<string, string> = {
   GROUP_STAGE: "Group Stage",
   LAST_32: "Round of 32",
