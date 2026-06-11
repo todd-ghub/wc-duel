@@ -127,7 +127,7 @@ export function Dashboard({ data }: { data: DataFile }) {
         <SectionTitle>Up next</SectionTitle>
         <div className="space-y-2.5">
           {next.map((m) => (
-            <MatchCard key={m.id} match={m} />
+            <MatchCard key={m.id} match={m} showDate />
           ))}
           {next.length === 0 && (
             <div className="glass rounded-2xl p-6 text-center text-sm text-white/50">

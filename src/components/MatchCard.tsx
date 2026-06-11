@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { Match } from "../lib/types";
 import { DRAFT_BY_TLA, OWNERS } from "../data/teams";
-import { fmtPts, fmtPts2, fmtTime, isFinished, isLive, stageLabel } from "../lib/format";
+import { dayHeading, fmtPts, fmtPts2, fmtTime, isFinished, isLive, stageLabel } from "../lib/format";
 import { scoreTeamInMatch, type TeamMatchScore } from "../lib/scoring";
 import { Flag } from "./Flag";
 import { OWNER_THEME } from "./owner";
@@ -93,7 +93,7 @@ function PtsBreakdown({ tla, sc }: { tla: string; sc: TeamMatchScore }) {
   );
 }
 
-export function MatchCard({ match: m }: { match: Match }) {
+export function MatchCard({ match: m, showDate = false }: { match: Match; showDate?: boolean }) {
   const live = isLive(m);
   const finished = isFinished(m);
   const [open, setOpen] = useState(false);
@@ -128,7 +128,9 @@ export function MatchCard({ match: m }: { match: Match }) {
             ) : finished ? (
               <span className="text-white/40">FT</span>
             ) : (
-              <span className="text-white/55">{fmtTime(m.utcDate)}</span>
+              <span className="text-white/55">
+                {showDate ? `${dayHeading(m.utcDate)} · ${fmtTime(m.utcDate)}` : fmtTime(m.utcDate)}
+              </span>
             )}
           </span>
         </div>
