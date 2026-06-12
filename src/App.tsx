@@ -6,6 +6,7 @@ import { Dashboard } from "./screens/Dashboard";
 import { Schedule } from "./screens/Schedule";
 import { Teams, TeamControls, type TeamSort, type TeamFilter } from "./screens/Teams";
 import { History } from "./screens/History";
+import { ScoringModal } from "./components/ScoringModal";
 
 const TAB_TITLES: Record<TabKey, string> = {
   home: "Scoreboard",
@@ -28,6 +29,7 @@ export default function App() {
   const [tab, setTab] = useState<TabKey>("home");
   const [teamSort, setTeamSort] = useState<TeamSort>("pts");
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("ALL");
+  const [scoringOpen, setScoringOpen] = useState(false);
   const { data, ready, error, loading, refresh } = useData();
 
   return (
@@ -49,16 +51,28 @@ export default function App() {
               </p>
             )}
           </div>
-          <button
-            onClick={refresh}
-            aria-label="Refresh"
-            className="glass grid h-10 w-10 place-items-center rounded-full active:scale-90"
-            style={{ transition: "transform 0.12s" }}
-          >
-            <motion.span animate={loading ? { rotate: 360 } : { rotate: 0 }} transition={loading ? { repeat: Infinity, duration: 1, ease: "linear" } : { duration: 0 }}>
-              <RefreshIcon />
-            </motion.span>
-          </button>
+          <div className="flex items-center gap-2">
+            {tab === "home" && (
+              <button
+                onClick={() => setScoringOpen(true)}
+                aria-label="Scoring rules"
+                className="glass grid h-10 w-10 place-items-center rounded-full active:scale-90"
+                style={{ transition: "transform 0.12s" }}
+              >
+                <InfoIcon />
+              </button>
+            )}
+            <button
+              onClick={refresh}
+              aria-label="Refresh"
+              className="glass grid h-10 w-10 place-items-center rounded-full active:scale-90"
+              style={{ transition: "transform 0.12s" }}
+            >
+              <motion.span animate={loading ? { rotate: 360 } : { rotate: 0 }} transition={loading ? { repeat: Infinity, duration: 1, ease: "linear" } : { duration: 0 }}>
+                <RefreshIcon />
+              </motion.span>
+            </button>
+          </div>
         </div>
 
         {/* Teams' owner filter lives in the header so it stays pinned while the
@@ -97,6 +111,7 @@ export default function App() {
       )}
 
       <TabBar tab={tab} onChange={setTab} />
+      <ScoringModal open={scoringOpen} onClose={() => setScoringOpen(false)} />
     </div>
   );
 }
@@ -127,6 +142,15 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
         </button>
       </div>
     </div>
+  );
+}
+
+function InfoIcon() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx={12} cy={12} r={10} />
+      <path d="M12 16v-4M12 8h.01" />
+    </svg>
   );
 }
 
