@@ -1,46 +1,62 @@
 // The rules engine. Implements RULES.md exactly:
-//   Base = ResultPts + CleanSheetPts + 0.15*GoalsFor - 0.10*GoalsAgainst
-//   Multiplier from the FIFA rank gap between the two teams in the match.
-//   Final = Base > 0 ? Base * (1 + Multiplier) : 0   (capped at zero, no negatives)
+//   Attack = diminishing per-goal points (0.50 / 0.25 / 0.15 / 0.10 each)
+//   Defense = tiered points based on goals conceded (0.50 / 0.25 / 0.12 / 0)
+//   Base = ResultPts + AttackPts + DefensePts
+//   Multiplier = absolute rank multiplier (both underdog and favorite differ from 1.00)
+//   Final = max(0, Base × Multiplier)
 
 import { DRAFT, DRAFT_BY_TLA, OWNER_IDS, type Owner } from "../data/teams";
 import type { Match } from "./types";
 
 const WIN_PTS = 3;
 const DRAW_PTS = 1;
-const GOAL_FOR_PTS = 0.15;
-const GOAL_AGAINST_PTS = 0.1;
-const CLEAN_SHEET_PTS = 0.5;
+
+/** Diminishing returns for goals scored (RULES.md Attack). */
+function attackPoints(goals: number): number {
+  if (goals === 0) return 0;
+  let pts = 0.50;
+  if (goals >= 2) pts += 0.25;
+  if (goals >= 3) pts += 0.15;
+  if (goals >= 4) pts += 0.10 * (goals - 3);
+  return pts;
+}
+
+/** Tiered points for goals conceded (RULES.md Defense). */
+function defensePoints(goalsAgainst: number): number {
+  if (goalsAgainst === 0) return 0.50;
+  if (goalsAgainst === 1) return 0.25;
+  if (goalsAgainst === 2) return 0.12;
+  return 0;
+}
 
 /**
- * Maps the signed FIFA rank differential (team rank − opponent rank) to a bonus
- * multiplier (RULES.md §2). A smaller rank number is a better team, so only the
- * lower-ranked underdog gets a positive differential and can earn a bonus; a
- * favorite's differential is negative and lands in the Base (0%) slot.
+ * Returns the absolute rank multiplier for a team in a match.
+ * diff = myRank − oppRank: positive → underdog (higher number = weaker), negative → favorite.
+ * Brackets from RULES.md: ≤10 / 11–20 / 21–35 / 36–55 / 56–75 / 76+.
  */
 export function multiplierForRankDiff(diff: number): number {
-  if (diff <= 10) return 0;
-  if (diff <= 18) return 0.15;
-  if (diff <= 26) return 0.25;
-  if (diff <= 34) return 0.4;
-  if (diff <= 42) return 0.6;
-  if (diff <= 50) return 0.8;
-  return 1.0;
+  const abs = Math.abs(diff);
+  const isUnderdog = diff > 0;
+  if (abs <= 10) return 1.00;
+  if (abs <= 20) return isUnderdog ? 1.15 : 0.95;
+  if (abs <= 35) return isUnderdog ? 1.25 : 0.85;
+  if (abs <= 55) return isUnderdog ? 1.40 : 0.75;
+  if (abs <= 75) return isUnderdog ? 1.60 : 0.65;
+  return isUnderdog ? 1.80 : 0.55;
 }
 
 export interface TeamMatchScore {
   result: "W" | "D" | "L";
   resultPts: number;
   cleanSheet: boolean;
-  cleanSheetPts: number;
   goalsFor: number;
   goalsAgainst: number;
-  goalsForPts: number;
-  goalsAgainstPts: number;
+  attackPts: number;
+  defensePts: number;
   base: number;
   rankDiff: number;
   multiplier: number;
-  /** Final points earned, capped at zero. */
+  /** Final points earned, floored at zero. */
   final: number;
 }
 
@@ -94,22 +110,20 @@ export function scoreTeamInMatch(
   const result: "W" | "D" | "L" = gf > ga ? "W" : gf === ga ? "D" : "L";
   const resultPts = result === "W" ? WIN_PTS : result === "D" ? DRAW_PTS : 0;
   const cleanSheet = ga === 0;
-  const cleanSheetPts = cleanSheet ? CLEAN_SHEET_PTS : 0;
-  const goalsForPts = gf * GOAL_FOR_PTS;
-  const goalsAgainstPts = ga * GOAL_AGAINST_PTS;
+  const attackPts = attackPoints(gf);
+  const defensePts = defensePoints(ga);
 
-  const base = resultPts + cleanSheetPts + goalsForPts - goalsAgainstPts;
-  const final = base > 0 ? base * (1 + multiplier) : 0;
+  const base = resultPts + attackPts + defensePts;
+  const final = Math.max(0, base * multiplier);
 
   return {
     result,
     resultPts,
     cleanSheet,
-    cleanSheetPts,
     goalsFor: gf,
     goalsAgainst: ga,
-    goalsForPts,
-    goalsAgainstPts,
+    attackPts,
+    defensePts,
     base,
     rankDiff,
     multiplier,

@@ -5,14 +5,30 @@ import { computeStandings, type TeamStanding } from "../lib/scoring";
 import { fmtPts } from "../lib/format";
 import { Flag } from "../components/Flag";
 import { OWNER_THEME } from "../components/owner";
-import { SectionTitle } from "../components/SectionTitle";
 
 const CREST_BY_TLA = new Map<string, string | null>();
+
+export type TeamSort = "rank" | "pts";
+export type TeamFilter = Owner | "ALL";
+
+function OwnerBadge({ owner }: { owner: Owner }) {
+  const theme = OWNER_THEME[owner];
+  const short = OWNERS[owner].short ?? OWNERS[owner].label[0];
+  return (
+    <div
+      className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+      style={{ background: theme.gradient }}
+    >
+      {short}
+    </div>
+  );
+}
 
 function TeamLine({ t, rankInList }: { t: TeamStanding; rankInList: number }) {
   const crest = CREST_BY_TLA.get(t.tla) ?? null;
   return (
     <div className="glass flex items-center gap-3 rounded-2xl px-3.5 py-2.5">
+      <OwnerBadge owner={t.owner} />
       <span className="w-4 text-center text-[12px] font-semibold text-white/30 tabular-nums">
         {rankInList}
       </span>
@@ -34,48 +50,17 @@ function TeamLine({ t, rankInList }: { t: TeamStanding; rankInList: number }) {
   );
 }
 
-function OwnerColumn({ owner, total, teams }: { owner: Owner; total: number; teams: TeamStanding[] }) {
-  const theme = OWNER_THEME[owner];
-  return (
-    <section>
-      <SectionTitle>
-        <span
-          style={{
-            background: theme.gradient,
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            color: "transparent",
-          }}
-        >
-          {OWNERS[owner].label}
-        </span>
-        <span className="ml-1.5 font-bold text-white/70 tabular-nums">
-          ({fmtPts(total)})
-        </span>
-      </SectionTitle>
-      <div className="space-y-2">
-        {teams.map((t, i) => (
-          <TeamLine key={t.tla} t={t} rankInList={i + 1} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-export type TeamFilter = Owner | "BOTH";
-
-/** Owner filter pills. Rendered in the sticky header so they stay in view. */
-export function TeamFilterTabs({
+function PillTabs<T extends string>({
+  layoutId,
+  tabs,
   value,
   onChange,
 }: {
-  value: TeamFilter;
-  onChange: (f: TeamFilter) => void;
+  layoutId: string;
+  tabs: { key: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
 }) {
-  const tabs: { key: TeamFilter; label: string }[] = [
-    { key: "BOTH", label: "Both" },
-    ...OWNER_IDS.map((id) => ({ key: id, label: OWNERS[id].label })),
-  ];
   return (
     <div className="glass flex gap-1 rounded-2xl p-1">
       {tabs.map((t) => (
@@ -86,7 +71,7 @@ export function TeamFilterTabs({
         >
           {value === t.key && (
             <motion.span
-              layoutId="teamfilter"
+              layoutId={layoutId}
               className="absolute inset-0 rounded-xl bg-white/10"
               transition={{ type: "spring", stiffness: 320, damping: 30 }}
             />
@@ -100,23 +85,61 @@ export function TeamFilterTabs({
   );
 }
 
-export function Teams({ data, filter }: { data: DataFile; filter: TeamFilter }) {
-  // Capture crests from match data once so team rows can show real flags.
+export function TeamControls({
+  sort,
+  onSortChange,
+  filter,
+  onFilterChange,
+}: {
+  sort: TeamSort;
+  onSortChange: (s: TeamSort) => void;
+  filter: TeamFilter;
+  onFilterChange: (f: TeamFilter) => void;
+}) {
+  const sortTabs: { key: TeamSort; label: string }[] = [
+    { key: "pts", label: "Points" },
+    { key: "rank", label: "FIFA Rank" },
+  ];
+  const filterTabs: { key: TeamFilter; label: string }[] = [
+    { key: "ALL", label: "All" },
+    ...OWNER_IDS.map((id) => ({ key: id as TeamFilter, label: OWNERS[id].label })),
+  ];
+  return (
+    <div className="space-y-2">
+      <PillTabs layoutId="teamsort" tabs={sortTabs} value={sort} onChange={onSortChange} />
+      <PillTabs layoutId="teamfilter" tabs={filterTabs} value={filter} onChange={onFilterChange} />
+    </div>
+  );
+}
+
+export function Teams({
+  data,
+  sort,
+  filter,
+}: {
+  data: DataFile;
+  sort: TeamSort;
+  filter: TeamFilter;
+}) {
   for (const m of data.matches) {
     if (m.home.tla && m.home.crest) CREST_BY_TLA.set(m.home.tla, m.home.crest);
     if (m.away.tla && m.away.crest) CREST_BY_TLA.set(m.away.tla, m.away.crest);
   }
 
-  const { owners } = computeStandings(data.matches);
+  const { teams } = computeStandings(data.matches);
+
+  const sorted = Object.values(teams)
+    .filter((t) => filter === "ALL" || t.owner === filter)
+    .sort((a, b) => {
+      if (sort === "rank") return a.rank - b.rank;
+      return b.points - a.points || a.rank - b.rank;
+    });
 
   return (
-    <div className="space-y-6 px-4 pb-28 pt-2">
-      {OWNER_IDS.map(
-        (id) =>
-          (filter === "BOTH" || filter === id) && (
-            <OwnerColumn key={id} owner={id} total={owners[id].points} teams={owners[id].teams} />
-          ),
-      )}
+    <div className="space-y-2 px-4 pb-28 pt-2">
+      {sorted.map((t, i) => (
+        <TeamLine key={t.tla} t={t} rankInList={i + 1} />
+      ))}
     </div>
   );
 }

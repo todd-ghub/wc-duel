@@ -1,15 +1,12 @@
 import type { Match } from "./types";
 
-/** Points like 7.6 / 7.65 — trim trailing zeros but keep up to 2 decimals. */
+/** Points formatted to exactly 2 decimal places, e.g. 7.00 / 3.75. */
 export function fmtPts(n: number): string {
-  const r = Math.round(n * 100) / 100;
-  return r.toFixed(2).replace(/\.?0+$/, "") || "0";
-}
-
-/** Always exactly 2 decimal places — for aligned live-score columns. */
-export function fmtPts2(n: number): string {
   return (Math.round(n * 100) / 100).toFixed(2);
 }
+
+/** @deprecated Use fmtPts — it now always shows 2 decimal places. */
+export const fmtPts2 = fmtPts;
 
 const STAGE_LABELS: Record<string, string> = {
   GROUP_STAGE: "Group Stage",

@@ -4,7 +4,7 @@ import { useData } from "./lib/useData";
 import { TabBar, type TabKey } from "./components/TabBar";
 import { Dashboard } from "./screens/Dashboard";
 import { Schedule } from "./screens/Schedule";
-import { Teams, TeamFilterTabs, type TeamFilter } from "./screens/Teams";
+import { Teams, TeamControls, type TeamSort, type TeamFilter } from "./screens/Teams";
 import { History } from "./screens/History";
 
 const TAB_TITLES: Record<TabKey, string> = {
@@ -26,7 +26,8 @@ function relativeTime(iso: string): string {
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>("home");
-  const [teamFilter, setTeamFilter] = useState<TeamFilter>("BOTH");
+  const [teamSort, setTeamSort] = useState<TeamSort>("pts");
+  const [teamFilter, setTeamFilter] = useState<TeamFilter>("ALL");
   const { data, ready, error, loading, refresh } = useData();
 
   return (
@@ -64,7 +65,12 @@ export default function App() {
             list scrolls underneath. */}
         {tab === "teams" && data && (
           <div className="mt-3">
-            <TeamFilterTabs value={teamFilter} onChange={setTeamFilter} />
+            <TeamControls
+              sort={teamSort}
+              onSortChange={setTeamSort}
+              filter={teamFilter}
+              onFilterChange={setTeamFilter}
+            />
           </div>
         )}
       </header>
@@ -84,7 +90,7 @@ export default function App() {
           >
             {tab === "home" && <Dashboard data={data} />}
             {tab === "schedule" && <Schedule data={data} />}
-            {tab === "teams" && <Teams data={data} filter={teamFilter} />}
+            {tab === "teams" && <Teams data={data} sort={teamSort} filter={teamFilter} />}
             {tab === "history" && <History data={data} />}
           </motion.main>
         </AnimatePresence>

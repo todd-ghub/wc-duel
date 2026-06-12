@@ -63,16 +63,15 @@ function PtsBreakdown({ tla, sc }: { tla: string; sc: TeamMatchScore }) {
   const theme = OWNER_THEME[t.owner];
   const rows: [string, string][] = [
     [{ W: "Win", D: "Draw", L: "Loss" }[sc.result], fmtPts(sc.resultPts)],
-    ["Goals scored", `+${fmtPts(sc.goalsForPts)}`],
-    ["Goals conceded", `−${fmtPts(sc.goalsAgainstPts)}`],
+    ["Attack", `+${fmtPts(sc.attackPts)}`],
+    [sc.cleanSheet ? "Defense (clean sheet)" : `Defense (${sc.goalsAgainst} conceded)`, `+${fmtPts(sc.defensePts)}`],
   ];
-  if (sc.cleanSheet) rows.splice(1, 0, ["Clean sheet", `+${fmtPts(sc.cleanSheetPts)}`]);
 
   return (
     <div className="rounded-xl bg-black/20 p-3 text-[12px]">
       <div className="mb-1.5 flex items-center gap-2">
-        <Flag tla={tla} crest={t ? null : null} size={18} />
-        <span className="font-semibold">{t.name}</span>
+        <Flag tla={tla} crest={null} size={18} />
+        <span className="font-semibold uppercase tracking-wide">{tla}</span>
         <span className="ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ color: theme.text, background: "rgba(255,255,255,0.06)" }}>
           {fmtPts(sc.final)} pts
         </span>
@@ -85,7 +84,7 @@ function PtsBreakdown({ tla, sc }: { tla: string; sc: TeamMatchScore }) {
           </div>
         ))}
         <div className="flex justify-between border-t border-white/10 pt-1 text-white/80">
-          <span>Base{sc.multiplier > 0 ? ` ×${(1 + sc.multiplier).toFixed(2)} (rank +${Math.round(sc.multiplier * 100)}%)` : ""}</span>
+          <span>Base{sc.multiplier !== 1 ? ` ×${sc.multiplier.toFixed(2)} (rank)` : ""}</span>
           <span className="tabular-nums">{fmtPts(sc.base)}</span>
         </div>
       </div>
@@ -101,12 +100,12 @@ export function MatchCard({ match: m, showDate = false }: { match: Match; showDa
   const homeWin = finished && (m.scoreHome ?? 0) > (m.scoreAway ?? 0);
   const awayWin = finished && (m.scoreAway ?? 0) > (m.scoreHome ?? 0);
 
-  const homeSc = scoreTeamInMatch(m, "home");
-  const awaySc = scoreTeamInMatch(m, "away");
-  const expandable = finished && (homeSc != null || awaySc != null);
+  const homeSc = scoreTeamInMatch(m, "home", { includeInPlay: true });
+  const awaySc = scoreTeamInMatch(m, "away", { includeInPlay: true });
+  const expandable = (finished || live) && (homeSc != null || awaySc != null);
 
-  const homeLiveSc = live ? scoreTeamInMatch(m, "home", { includeInPlay: true }) : null;
-  const awayLiveSc = live ? scoreTeamInMatch(m, "away", { includeInPlay: true }) : null;
+  const homeLiveSc = live ? homeSc : null;
+  const awayLiveSc = live ? awaySc : null;
 
   return (
     <motion.div layout className="glass overflow-hidden rounded-2xl">
@@ -139,7 +138,7 @@ export function MatchCard({ match: m, showDate = false }: { match: Match; showDa
           <TeamRow tla={m.away.tla} name={m.away.name} crest={m.away.crest} score={finished || live ? m.scoreAway : null} bold={awayWin} livePoints={awayLiveSc?.final} />
         </div>
         {expandable && (
-          <div className="mt-2 text-center text-[11px] text-white/35">
+          <div className={`mt-2 text-center text-[11px] ${live && !open ? "text-(--color-live)/50" : "text-white/35"}`}>
             {open ? "hide points" : "tap for points"}
           </div>
         )}

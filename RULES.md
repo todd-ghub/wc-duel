@@ -1,37 +1,61 @@
-# WC Duel 2026 — Rules
+# World Cup Draft — Scoring Rules
 
-Two players split the entire 48-team field into two ownership groups and earn points based on how their teams perform. (Who drafts which team is configured in `src/config.ts`.)
+## Setup
+- Split all 48 World Cup teams between 2 players (24 each).
+- Every team scores points each match based on **Result + Attack + Defense**, then adjusted by a **rank-based multiplier**.
 
-The field is divided between the two "owners".
+## The Formula
 
-## Points System
-### 1. Standard Points
-- 1 point for each team draw.
-- 3 points for each team win.
-- 0.15 points for each goal scored.
-- -0.10 points for each goal conceded.
-- 0.5 points for each clean sheet.
+**Match Score = (Result + Attack + Defense) × Rank Multiplier**
 
-### 2. Bonus by multiplier
-Bonus multiplier is determined by FIFA World rank differential, calculated as **your team's FIFA rank number − the opponent's FIFA rank number**. Because a smaller number is a better team, only the lower-ranked underdog gets a positive differential and can earn a bonus. A favorite (the higher-ranked team) gets a zero or negative differential and receives no multiplier (Base).
+Minimum score per match is **0** (a match can never go negative).
 
-| Rank Difference   | Point Multiplier |
-|:------------------| :--- |
-| **<= 10**         | **Base (0%)** |
-| **11 to 18**      | **+15%** |
-| **19 to 26**      | **+25%** |
-| **27 to 34**      | **+40%** |
-| **35 to 42**      | **+60%** |
-| **43 to 50**      | **+80%** |
-| **51 or Greater** | **+100% (Cap)** |
+---
 
-### 3. The Final Score Formula
-$$\text{Base Score} = \text{Result Pts} + \text{Clean Sheet Pts} + \text{Goals Scored Pts} - \text{Goals Conceded Pts}$$
+### 1. Result
+| Outcome | Points |
+|---|---|
+| Win | 3 |
+| Draw | 1 |
+| Loss | 0 |
 
-*   **If Base Score is greater than 0:**  
-    $$\text{Final Game Points} = \text{Base Score} + (\text{Multiplier} \times \text{Base Score})$$
-*   **If Base Score is 0 or less:**  
-    $$\text{Final Game Points} = 0.00$$ *(Game score is capped at zero; no negative points can be earned)*
+### 2. Attack — goals scored (diminishing)
+| Goal | Points |
+|---|---|
+| 1st goal | 0.50 |
+| 2nd goal | 0.25 |
+| 3rd goal | 0.15 |
+| 4th+ goal | 0.10 each |
+
+*Running totals: 1 goal = 0.50 · 2 = 0.75 · 3 = 0.90 · 4 = 1.00 · 5 = 1.10*
+
+### 3. Defense — goals conceded
+| Conceded | Points |
+|---|---|
+| 0 | 0.50 |
+| 1 | 0.25 |
+| 2 | 0.12 |
+| 3+ | 0 |
+
+### 4. Rank Multiplier
+Use the FIFA rank difference between the two teams. The **lower-ranked** team is the underdog (boost); the **higher-ranked** team is the favorite (discount). Apply the multiplier to the full match total.
+
+| Rank Difference | Underdog | Favorite |
+|-----------------|---|----------|
+| ≤ 10            | ×1.00 | ×1.00    |
+| 11–20           | ×1.15 | ×0.95    |
+| 21–35           | ×1.25 | ×0.85    |
+| 36–55           | ×1.40 | ×0.75    |
+| 56–75           | ×1.60 | ×0.65    |
+| 75+             | ×1.80 | ×0.55    |
+
+---
+
+## Quick Reference Card
+- **Win 3 / Draw 1 / Loss 0**
+- **Goals:** 0.50, 0.25, 0.15, then 0.10 each
+- **Clean sheet 0.50 / conceded 1 → 0.25 / 2 → 0.12 / 3+ → 0**
+- **Multiply by rank table, floor at 0**
 
 ## Official Tournament Field & Rosters (Ordered by FIFA Rank)
 
