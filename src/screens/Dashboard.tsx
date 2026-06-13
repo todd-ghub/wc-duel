@@ -57,11 +57,11 @@ export function Dashboard({ data }: { data: DataFile }) {
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-          <OwnerSide owner={idA} pts={dTotal} livePoints={liveOwnerPts[idA]} leading={leader === idA} align="start" />
+          <OwnerSide owner={idA} pts={dTotal} livePoints={liveOwnerPts[idA]} played={d.played} leading={leader === idA} align="start" />
           <div className="px-1 text-center">
             <div className="text-[11px] font-bold uppercase tracking-widest text-white/30">vs</div>
           </div>
-          <OwnerSide owner={idB} pts={aTotal} livePoints={liveOwnerPts[idB]} leading={leader === idB} align="end" />
+          <OwnerSide owner={idB} pts={aTotal} livePoints={liveOwnerPts[idB]} played={a.played} leading={leader === idB} align="end" />
         </div>
 
         {/* Share bar */}
@@ -156,12 +156,14 @@ function OwnerSide({
   owner,
   pts,
   livePoints,
+  played,
   leading,
   align,
 }: {
   owner: Owner;
   pts: number;
   livePoints: number;
+  played: number;
   leading: boolean;
   align: "start" | "end";
 }) {
@@ -192,7 +194,9 @@ function OwnerSide({
           +{fmtPts(livePoints)} live
         </span>
       )}
-      <span className="text-[11px] text-white/40">points</span>
+      <span className="text-[11px] text-white/40">
+        points <span className="tabular-nums">({played})</span>
+      </span>
     </div>
   );
 }
