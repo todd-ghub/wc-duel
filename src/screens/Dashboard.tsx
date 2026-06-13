@@ -195,7 +195,7 @@ function OwnerSide({
         </span>
       )}
       <span className="text-[11px] text-white/40">
-        points <span className="tabular-nums">({played})</span>
+        points (<span className="tabular-nums">{played}</span> team-matches)
       </span>
     </div>
   );
