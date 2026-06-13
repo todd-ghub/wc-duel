@@ -13,7 +13,7 @@ const TABS: { key: TabKey; label: string; icon: () => JSX.Element }[] = [
 export function TabBar({ tab, onChange }: { tab: TabKey; onChange: (t: TabKey) => void }) {
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 bg-ink px-4 pt-2"
+      className="fixed inset-x-0 bottom-0 z-30 px-4"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 10px)" }}
     >
       <div className="glass mx-auto flex max-w-md items-stretch justify-around rounded-2xl p-1.5 shadow-2xl shadow-black/40">

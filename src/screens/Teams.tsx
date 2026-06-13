@@ -1,6 +1,8 @@
 import { motion } from "motion/react";
 import type { DataFile } from "../lib/types";
 import { OWNERS, OWNER_IDS, type Owner } from "../data/teams";
+import { PLAYER1_RANKS, PLAYER2_RANKS } from "../config";
+import { FIELD } from "../data/field";
 import { computeStandings, type TeamStanding } from "../lib/scoring";
 import { fmtPts } from "../lib/format";
 import { Flag } from "../components/Flag";
@@ -8,8 +10,22 @@ import { OWNER_THEME } from "../components/owner";
 
 const CREST_BY_TLA = new Map<string, string | null>();
 
-export type TeamSort = "rank" | "pts";
+export type TeamSort = "rank" | "pts" | "playerRank";
 export type TeamFilter = Owner | "ALL";
+
+// Each owner's effective pre-draft ranking list. An empty list in config.ts
+// means "use FIFA order" (same fallback the lock-draft script applies), so we
+// mirror that here. Used by the "Player Rank" sort.
+const FIFA_ORDER = FIELD.map((t) => t.tla);
+const OWNER_RANKS: Record<Owner, readonly string[]> = {
+  [OWNER_IDS[0]]: PLAYER1_RANKS.length > 0 ? PLAYER1_RANKS : FIFA_ORDER,
+  [OWNER_IDS[1]]: PLAYER2_RANKS.length > 0 ? PLAYER2_RANKS : FIFA_ORDER,
+} as Record<Owner, readonly string[]>;
+
+function playerRankOf(t: TeamStanding): number {
+  const idx = OWNER_RANKS[t.owner].indexOf(t.tla);
+  return idx === -1 ? Number.POSITIVE_INFINITY : idx;
+}
 
 function OwnerBadge({ owner }: { owner: Owner }) {
   const theme = OWNER_THEME[owner];
@@ -99,6 +115,7 @@ export function TeamControls({
   const sortTabs: { key: TeamSort; label: string }[] = [
     { key: "pts", label: "Points" },
     { key: "rank", label: "FIFA Rank" },
+    { key: "playerRank", label: "Player Rank" },
   ];
   const filterTabs: { key: TeamFilter; label: string }[] = [
     { key: "ALL", label: "All" },
@@ -132,6 +149,7 @@ export function Teams({
     .filter((t) => filter === "ALL" || t.owner === filter)
     .sort((a, b) => {
       if (sort === "rank") return a.rank - b.rank;
+      if (sort === "playerRank") return playerRankOf(a) - playerRankOf(b) || a.rank - b.rank;
       return b.points - a.points || a.rank - b.rank;
     });
 
