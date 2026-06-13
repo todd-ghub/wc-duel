@@ -40,10 +40,10 @@ function OwnerBadge({ owner }: { owner: Owner }) {
   );
 }
 
-function TeamLine({ t, rankInList }: { t: TeamStanding; rankInList: number }) {
+function TeamLine({ t, rankInList, dim }: { t: TeamStanding; rankInList: number; dim?: boolean }) {
   const crest = CREST_BY_TLA.get(t.tla) ?? null;
   return (
-    <div className="glass flex items-center gap-3 rounded-2xl px-3.5 py-2.5">
+    <div className={`glass flex items-center gap-3 rounded-2xl px-3.5 py-2.5 ${dim ? "opacity-40" : ""}`}>
       <OwnerBadge owner={t.owner} />
       <span className="w-4 text-center text-[12px] font-semibold text-white/30 tabular-nums">
         {rankInList}
@@ -145,18 +145,31 @@ export function Teams({
 
   const { teams } = computeStandings(data.matches);
 
-  const sorted = Object.values(teams)
-    .filter((t) => filter === "ALL" || t.owner === filter)
-    .sort((a, b) => {
-      if (sort === "rank") return a.rank - b.rank;
-      if (sort === "playerRank") return playerRankOf(a) - playerRankOf(b) || a.rank - b.rank;
-      return b.points - a.points || a.rank - b.rank;
-    });
+  // Player Rank + single-player filter: show that player's FULL 48-team
+  // ranking, so they can verify the draft and see exactly which preferred
+  // teams ended up with the other side. Teams not owned by the filtered
+  // player are still listed (in their ranked position) but dimmed.
+  const showFullRanking = sort === "playerRank" && filter !== "ALL";
+
+  const sorted = showFullRanking
+    ? OWNER_RANKS[filter].map((tla) => teams[tla]).filter(Boolean)
+    : Object.values(teams)
+        .filter((t) => filter === "ALL" || t.owner === filter)
+        .sort((a, b) => {
+          if (sort === "rank") return a.rank - b.rank;
+          if (sort === "playerRank") return playerRankOf(a) - playerRankOf(b) || a.rank - b.rank;
+          return b.points - a.points || a.rank - b.rank;
+        });
 
   return (
     <div className="space-y-2 px-4 pb-28 pt-2">
       {sorted.map((t, i) => (
-        <TeamLine key={t.tla} t={t} rankInList={i + 1} />
+        <TeamLine
+          key={t.tla}
+          t={t}
+          rankInList={i + 1}
+          dim={showFullRanking && t.owner !== filter}
+        />
       ))}
     </div>
   );
