@@ -57,11 +57,11 @@ export function Dashboard({ data }: { data: DataFile }) {
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-          <OwnerSide owner={idA} pts={dTotal} livePoints={liveOwnerPts[idA]} played={d.played} leading={leader === idA} align="start" />
+          <OwnerSide owner={idA} pts={dTotal} livePoints={liveOwnerPts[idA]} played={d.played} avgPts={d.played > 0 ? d.points / d.played : 0} leading={leader === idA} align="start" />
           <div className="px-1 text-center">
             <div className="text-[11px] font-bold uppercase tracking-widest text-white/30">vs</div>
           </div>
-          <OwnerSide owner={idB} pts={aTotal} livePoints={liveOwnerPts[idB]} played={a.played} leading={leader === idB} align="end" />
+          <OwnerSide owner={idB} pts={aTotal} livePoints={liveOwnerPts[idB]} played={a.played} avgPts={a.played > 0 ? a.points / a.played : 0} leading={leader === idB} align="end" />
         </div>
 
         {/* Share bar */}
@@ -157,6 +157,7 @@ function OwnerSide({
   pts,
   livePoints,
   played,
+  avgPts,
   leading,
   align,
 }: {
@@ -164,6 +165,7 @@ function OwnerSide({
   pts: number;
   livePoints: number;
   played: number;
+  avgPts: number;
   leading: boolean;
   align: "start" | "end";
 }) {
@@ -192,6 +194,11 @@ function OwnerSide({
       {livePoints > 0 && (
         <span className="text-[11px] font-semibold tabular-nums text-(--color-live)/80">
           +{fmtPts(livePoints)} live
+        </span>
+      )}
+      {played > 0 && (
+        <span className="text-[13px] font-semibold tabular-nums text-white/55">
+          Avg: {fmtPts(avgPts)}
         </span>
       )}
       <span className="text-[11px] text-white/40">
